@@ -1,8 +1,9 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 :root {
-  --tb: 52px;   /* toolbar height */
-  --mb: 58px;   /* mobile bar height */
+  --tb: 52px;
+  --mb: 58px;
+  --panel: 220px;
   --accent: #6c63ff;
   --shadow: 0 2px 8px rgba(0,0,0,.15);
 }
@@ -24,7 +25,8 @@ html, body {
   padding: 0 6px; gap: 2px;
   z-index: 100;
 }
-#toolbar-left  { display: flex; align-items: center; gap: 1px; flex-shrink: 0; flex-wrap: nowrap; }
+#toolbar-left  { display: flex; align-items: center; gap: 1px; flex-shrink: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+#toolbar-left::-webkit-scrollbar { display: none; }
 #toolbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
 
 .tool-btn {
@@ -38,9 +40,10 @@ html, body {
 .tool-btn:hover      { background: #eee; }
 .tool-btn.active     { background: var(--accent); }
 .tool-btn.active svg { fill: #fff; }
-/* SVG icons that use stroke instead of fill */
 .tool-btn svg[stroke] { fill: none; stroke: #444; }
 .tool-btn.active svg[stroke] { stroke: #fff; }
+
+.zoom-label { font-size: 11px; color: #666; min-width: 34px; text-align: center; flex-shrink: 0; }
 
 .separator { width: 1px; height: 28px; background: #ddd; margin: 0 3px; flex-shrink: 0; }
 
@@ -64,18 +67,122 @@ html, body {
 #size-slider   { width: 80px; accent-color: var(--accent); }
 #size-label    { font-size: 12px; min-width: 18px; color: #555; }
 
-/* ═══ CANVAS ════════════════════════════════════════════════════════════════ */
+/* ═══ CANVAS AREA ═══════════════════════════════════════════════════════════ */
 #canvas-container {
   position: fixed;
   top: var(--tb); left: 0; right: 0; bottom: 0;
-  overflow: hidden; background: #fff;
+  overflow: hidden; background: #ccc;
   cursor: crosshair;
 }
-#drawing-canvas { display: block; touch-action: none; }
-#lasso-canvas   {
-  position: absolute; top: 0; left: 0;
-  pointer-events: none; /* events go to drawing-canvas */
+#canvas-container.panning { cursor: grab; }
+#canvas-container.panning-active { cursor: grabbing; }
+
+#viewport {
+  position: absolute;
+  top: 0; left: 0;
+  transform-origin: 0 0;
+  /* size set in JS to CANVAS_W x CANVAS_H */
 }
+
+.layer-canvas {
+  position: absolute;
+  top: 0; left: 0;
+  display: block;
+}
+
+#lasso-canvas {
+  position: absolute; top: 0; left: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* ═══ SIDE PANEL ═════════════════════════════════════════════════════════════ */
+#side-panel {
+  position: fixed;
+  top: var(--tb); right: 0; bottom: 0;
+  width: var(--panel);
+  background: #fff;
+  box-shadow: -2px 0 8px rgba(0,0,0,.12);
+  z-index: 90;
+  display: flex; flex-direction: column;
+  transform: translateX(0);
+  transition: transform .2s;
+}
+#side-panel.hidden { transform: translateX(100%); }
+
+#panel-tabs {
+  display: flex; border-bottom: 1px solid #eee;
+}
+.tab-btn {
+  flex: 1; padding: 11px 0; border: none; background: transparent;
+  font-size: 13px; font-weight: 600; color: #888; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+#tab-layers, #tab-pages { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.tab-hidden { display: none !important; }
+
+#layers-list, #pages-list {
+  flex: 1; overflow-y: auto; padding: 6px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+
+.panel-add-btn {
+  margin: 6px; padding: 9px;
+  border: 1.5px dashed #ccc; border-radius: 8px;
+  background: transparent; cursor: pointer; font-size: 13px; color: #888;
+  transition: border-color .15s, color .15s;
+}
+.panel-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Layer item */
+.layer-item {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 4px; border-radius: 7px;
+  background: #f8f8f8; cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: border-color .12s;
+}
+.layer-item.active { border-color: var(--accent); background: #f0eeff; }
+.layer-thumb {
+  width: 50px; height: 38px; border-radius: 4px;
+  border: 1px solid #ddd; flex-shrink: 0;
+  object-fit: contain; background: #fff;
+}
+.layer-name {
+  flex: 1; font-size: 12px; color: #444; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+.layer-vis, .layer-del {
+  width: 26px; height: 26px; border: none; background: transparent;
+  cursor: pointer; border-radius: 5px; display: flex;
+  align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 14px; color: #666;
+}
+.layer-vis:hover, .layer-del:hover { background: #eee; }
+.layer-del:disabled { opacity: .3; cursor: default; }
+
+/* Page item */
+.page-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 4px; border-radius: 7px;
+  background: #f8f8f8; cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: border-color .12s;
+}
+.page-item.active { border-color: var(--accent); background: #f0eeff; }
+.page-thumb {
+  width: 60px; height: 45px; border-radius: 4px;
+  border: 1px solid #ddd; flex-shrink: 0; background: #fff;
+}
+.page-label { flex: 1; font-size: 12px; color: #444; }
+.page-del {
+  width: 26px; height: 26px; border: none; background: transparent;
+  cursor: pointer; border-radius: 5px; font-size: 14px; color: #666;
+}
+.page-del:hover { background: #eee; }
+.page-del:disabled { opacity: .3; cursor: default; }
 
 /* ═══ MOBILE BAR ════════════════════════════════════════════════════════════ */
 #mobile-bar { display: none; }
@@ -153,7 +260,6 @@ html, body {
     padding: 0 6px;
     gap: 2px;
     z-index: 100;
-    /* hide scrollbar visually */
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     padding-bottom: env(safe-area-inset-bottom, 0);
@@ -181,7 +287,18 @@ html, body {
     flex-shrink: 0;
   }
 
-  /* Popup: slide up from bottom */
+  /* Side panel: slide up from bottom on mobile */
+  #side-panel {
+    top: auto;
+    bottom: var(--mb); right: 0; left: 0;
+    width: 100%;
+    height: 55vh;
+    border-radius: 16px 16px 0 0;
+    transform: translateY(0);
+    box-shadow: 0 -4px 20px rgba(0,0,0,.2);
+  }
+  #side-panel.hidden { transform: translateY(110%); }
+
   #color-popup { align-items: flex-end; justify-content: stretch; }
   #color-popup-inner {
     width: 100%; border-radius: 22px 22px 0 0;
