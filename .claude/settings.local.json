@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/andersbehrens2/**)",
+      "Bash(convert --version)",
+      "Bash(python3 -c \"from PIL import Image, ImageDraw; print\\('PIL OK'\\)\")",
+      "Bash(python3:*)",
+      "Bash(git init:*)",
+      "Bash(git checkout:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}
