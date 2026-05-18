@@ -1,12 +1,12 @@
-const CACHE = 'ritapp-v1';
+const CACHE = 'ritapp-v2';
 const ASSETS = [
-  '/ritapp/',
-  '/ritapp/index.html',
-  '/ritapp/style.css',
-  '/ritapp/app.js',
-  '/ritapp/manifest.json',
-  '/ritapp/icons/icon-192.png',
-  '/ritapp/icons/icon-512.png',
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
 ];
 
 self.addEventListener('install', e => {
