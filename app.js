@@ -28,7 +28,7 @@ function resizeCanvas() {
 window.addEventListener('resize', () => {
   resizeCanvas();
   if (!document.getElementById('color-popup').classList.contains('hidden')) {
-    renderWheel();
+    updateIndicator();
   }
 });
 resizeCanvas();
@@ -91,20 +91,21 @@ function saveImage() {
   a.click();
 }
 
-// ── Color wheel ─────────────────────────────────────────────────────────────
-const wheelCanvas = document.getElementById('color-wheel');
-const wheelCtx    = wheelCanvas.getContext('2d');
+// ── Color wheel (CSS-based) ─────────────────────────────────────────────────
+const wheelRing = document.getElementById('wheel-ring');
+const wheelIndicator = document.getElementById('wheel-indicator');
 
 let wheelHue       = 0;    // 0-360
-let wheelSat       = 0;    // 0-1  (0 = center/gray, 1 = edge/vivid)
+let wheelSat       = 0;    // 0-1
 let wheelLightness = 0.5;  // 0-1
 
-// Convert HSL (0-1 each) → RGB (0-255 each)
 function hslToRgb(h, s, l) {
   let r, g, b;
   if (s === 0) {
     r = g = b = l;
   } else {
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
     const hue2rgb = (p, q, t) => {
       if (t < 0) t += 1;
       if (t > 1) t -= 1;
@@ -113,8 +114,6 @@ function hslToRgb(h, s, l) {
       if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
       return p;
     };
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
     r = hue2rgb(p, q, h + 1/3);
     g = hue2rgb(p, q, h);
     b = hue2rgb(p, q, h - 1/3);
@@ -122,142 +121,92 @@ function hslToRgb(h, s, l) {
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
 
-// Convert RGB → hex string
 function rgbToHex(r, g, b) {
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
 }
 
-// Draw the wheel using radial gradient segments (fast)
-function renderWheel() {
-  // Size the canvas to fit its container (square)
-  const wrap = document.getElementById('wheel-wrap');
-  const size = Math.min(wrap.clientWidth, 280);
-  wheelCanvas.width  = size;
-  wheelCanvas.height = size;
+function updateIndicator() {
+  const size   = wheelRing.offsetWidth;
+  const cx     = size / 2;
+  const radius = cx - 4;
+  const angle  = wheelHue * Math.PI / 180;
+  const r      = wheelSat * radius;
+  const ix     = cx + r * Math.cos(angle);
+  const iy     = cx + r * Math.sin(angle);
+  wheelIndicator.style.left = ix + 'px';
+  wheelIndicator.style.top  = iy + 'px';
+}
 
-  const cx = size / 2;
-  const cy = size / 2;
-  const radius = size / 2 - 2;
-
-  wheelCtx.clearRect(0, 0, size, size);
-
-  // Draw 360 pie slices, each with a radial gradient: gray center → hue edge
-  for (let h = 0; h < 360; h++) {
-    const startAngle = (h - 1) * Math.PI / 180;
-    const endAngle   = (h + 1) * Math.PI / 180;
-
-    const [cr, cg, cb] = hslToRgb(h / 360, 0, wheelLightness);
-    const [er, eg, eb] = hslToRgb(h / 360, 1, wheelLightness);
-
-    const grad = wheelCtx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-    grad.addColorStop(0, `rgb(${cr},${cg},${cb})`);
-    grad.addColorStop(1, `rgb(${er},${eg},${eb})`);
-
-    wheelCtx.beginPath();
-    wheelCtx.moveTo(cx, cy);
-    wheelCtx.arc(cx, cy, radius, startAngle, endAngle);
-    wheelCtx.closePath();
-    wheelCtx.fillStyle = grad;
-    wheelCtx.fill();
+function updateWheelOverlay() {
+  // Darken with black overlay when lightness < 0.5, lighten with white when > 0.5
+  if (wheelLightness < 0.5) {
+    const darkness = 1 - wheelLightness * 2;
+    wheelRing.style.setProperty('--overlay', `rgba(0,0,0,${darkness * 0.75})`);
+  } else {
+    const lightness = (wheelLightness - 0.5) * 2;
+    wheelRing.style.setProperty('--overlay', `rgba(255,255,255,${lightness * 0.75})`);
   }
-
-  // Draw selector indicator
-  const angle = wheelHue * Math.PI / 180;
-  const r     = wheelSat * radius;
-  const ix    = cx + r * Math.cos(angle);
-  const iy    = cy + r * Math.sin(angle);
-
-  wheelCtx.beginPath();
-  wheelCtx.arc(ix, iy, 9, 0, 2 * Math.PI);
-  wheelCtx.strokeStyle = wheelLightness < 0.5 ? '#fff' : '#000';
-  wheelCtx.lineWidth   = 2.5;
-  wheelCtx.stroke();
-  wheelCtx.beginPath();
-  wheelCtx.arc(ix, iy, 6, 0, 2 * Math.PI);
-  wheelCtx.strokeStyle = wheelLightness >= 0.5 ? '#fff' : '#000';
-  wheelCtx.lineWidth   = 1.5;
-  wheelCtx.stroke();
 }
 
 function pickWheelColor(clientX, clientY) {
-  const rect   = wheelCanvas.getBoundingClientRect();
+  const rect   = wheelRing.getBoundingClientRect();
   const cx     = rect.width  / 2;
   const cy     = rect.height / 2;
-  const radius = Math.min(cx, cy) - 2;
-
-  const dx = clientX - rect.left - cx;
-  const dy = clientY - rect.top  - cy;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-
-  if (dist > radius) return; // outside wheel
+  const radius = cx - 4;
+  const dx     = clientX - rect.left - cx;
+  const dy     = clientY - rect.top  - cy;
+  const dist   = Math.sqrt(dx * dx + dy * dy);
+  if (dist > cx) return;
 
   wheelHue = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
   wheelSat = Math.min(dist / radius, 1);
 
   const [r, g, b] = hslToRgb(wheelHue / 360, wheelSat, wheelLightness);
-  const hex = rgbToHex(r, g, b);
-  setColor(hex);
-  renderWheel();
+  setColor(rgbToHex(r, g, b));
+  updateIndicator();
 }
 
 function onLightnessChange(val) {
   wheelLightness = parseInt(val) / 100;
+  updateWheelOverlay();
   const [r, g, b] = hslToRgb(wheelHue / 360, wheelSat, wheelLightness);
-  const hex = rgbToHex(r, g, b);
-  setColor(hex);
-  renderWheel();
+  setColor(rgbToHex(r, g, b));
 }
 
-// Sync wheel state when a preset color is picked
 function syncWheelToColor(hex) {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-  let s = 0, h = 0;
-
+  const r = parseInt(hex.slice(1,3),16)/255;
+  const g = parseInt(hex.slice(3,5),16)/255;
+  const b = parseInt(hex.slice(5,7),16)/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  const l = (max+min)/2;
+  let s=0, h=0;
   if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-      case g: h = ((b - r) / d + 2) / 6; break;
-      case b: h = ((r - g) / d + 4) / 6; break;
+    const d = max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max) {
+      case r: h = ((g-b)/d + (g<b?6:0))/6; break;
+      case g: h = ((b-r)/d + 2)/6; break;
+      case b: h = ((r-g)/d + 4)/6; break;
     }
   }
-
-  wheelHue       = h * 360;
-  wheelSat       = s;
-  wheelLightness = l;
-  document.getElementById('lightness-slider').value = Math.round(l * 100);
+  wheelHue = h*360; wheelSat = s; wheelLightness = l;
+  document.getElementById('lightness-slider').value = Math.round(l*100);
+  updateWheelOverlay();
+  updateIndicator();
 }
 
-// Wheel mouse events
-wheelCanvas.addEventListener('mousedown', e => {
-  e.preventDefault();
-  pickWheelColor(e.clientX, e.clientY);
-});
-wheelCanvas.addEventListener('mousemove', e => {
-  if (e.buttons === 1) pickWheelColor(e.clientX, e.clientY);
-});
+// Wheel mouse
+wheelRing.addEventListener('mousedown', e => { e.preventDefault(); pickWheelColor(e.clientX, e.clientY); });
+wheelRing.addEventListener('mousemove', e => { if (e.buttons===1) pickWheelColor(e.clientX, e.clientY); });
 
-// Wheel touch events
-wheelCanvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  pickWheelColor(e.touches[0].clientX, e.touches[0].clientY);
-}, { passive: false });
-wheelCanvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  pickWheelColor(e.touches[0].clientX, e.touches[0].clientY);
-}, { passive: false });
+// Wheel touch
+wheelRing.addEventListener('touchstart', e => { e.preventDefault(); pickWheelColor(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+wheelRing.addEventListener('touchmove',  e => { e.preventDefault(); pickWheelColor(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
 
 // ── Color popup open / close ────────────────────────────────────────────────
 function openColorPopup() {
   document.getElementById('color-popup').classList.remove('hidden');
-  // Small delay so layout is ready before measuring canvas size
-  requestAnimationFrame(() => renderWheel());
+  requestAnimationFrame(() => { updateIndicator(); updateWheelOverlay(); });
 }
 
 function closeColorPopup() {

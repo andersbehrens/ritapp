@@ -123,17 +123,19 @@
         <span id="color-hex-label">#000000</span>
       </div>
 
-      <!-- Color wheel canvas -->
+      <!-- Color wheel (CSS-based, always works) -->
       <div id="wheel-wrap">
-        <canvas id="color-wheel"></canvas>
+        <div id="wheel-ring" id="wheel-ring">
+          <div id="wheel-indicator"></div>
+        </div>
       </div>
 
       <!-- Lightness slider -->
       <div id="lightness-row">
-        <span class="slider-label dark-label">Mörk</span>
+        <span class="slider-label">Mörk</span>
         <input type="range" id="lightness-slider" min="5" max="95" value="50"
                oninput="onLightnessChange(this.value)">
-        <span class="slider-label light-label">Ljus</span>
+        <span class="slider-label">Ljus</span>
       </div>
 
       <!-- Quick color palette -->
