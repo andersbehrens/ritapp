@@ -14,141 +14,152 @@
 </head>
 <body>
 
-  <!-- Top toolbar -->
+  <!-- ── Top toolbar (desktop) ─────────────────────────────── -->
   <div id="toolbar">
     <div id="toolbar-left">
-      <button class="tool-btn active" id="btn-pencil" title="Penna" onclick="setTool('pencil')">
+      <button class="tool-btn active" id="btn-pencil" title="Penna (P)" onclick="setTool('pencil')">
         <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
       </button>
-      <button class="tool-btn" id="btn-brush" title="Pensel" onclick="setTool('brush')">
+      <button class="tool-btn" id="btn-brush" title="Pensel (B)" onclick="setTool('brush')">
         <svg viewBox="0 0 24 24"><path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a1 1 0 00-1.41 0L9 12.25 11.75 15l8.96-8.96a1 1 0 000-1.41z"/></svg>
       </button>
-      <button class="tool-btn" id="btn-marker" title="Markör" onclick="setTool('marker')">
+      <button class="tool-btn" id="btn-marker" title="Markör (M)" onclick="setTool('marker')">
         <svg viewBox="0 0 24 24"><path d="M18.5 1.15c-.53 0-1.04.19-1.43.58L5.35 13.46 9.54 17.65 21.27 5.92c.79-.79.79-2.07 0-2.86l-.35-.35c-.38-.38-.89-.56-1.42-.56zM5.35 14.89L3 21l6.11-2.35L5.35 14.89z"/></svg>
       </button>
-      <button class="tool-btn" id="btn-spray" title="Sprayburk" onclick="setTool('spray')">
+      <button class="tool-btn" id="btn-spray" title="Spray (Y)" onclick="setTool('spray')">
         <svg viewBox="0 0 24 24"><path d="M11 5h2v2h-2zm-2 2h2v2H9zm4 0h2v2h-2zm-6 2h2v2H7zm8 0h2v2h-2zm-4 0h2v2h-2zm-2 2h2v2H9zm4 0h2v2h-2zM7 2h10v2H7z"/><path d="M3 22l4-4v-5l-4 9zm14-9v5l4 4-4-9z"/></svg>
       </button>
-      <button class="tool-btn" id="btn-fill" title="Fyll" onclick="setTool('fill')">
+      <button class="tool-btn" id="btn-fill" title="Fyll (F)" onclick="setTool('fill')">
         <svg viewBox="0 0 24 24"><path d="M16.56 8.94L7.62 0 6.21 1.41l2.38 2.38-5.15 5.15a1.49 1.49 0 000 2.12l5.5 5.5c.29.29.68.44 1.06.44s.77-.15 1.06-.44l5.5-5.5c.59-.58.59-1.53 0-2.12zM5.21 10L10 5.21 14.79 10H5.21zM19 11.5s-2 2.17-2 3.5c0 1.1.9 2 2 2s2-.9 2-2c0-1.33-2-3.5-2-3.5z"/><path d="M0 20h24v4H0z" opacity=".36"/></svg>
       </button>
-      <button class="tool-btn" id="btn-eraser" title="Suddgummi" onclick="setTool('eraser')">
+      <button class="tool-btn" id="btn-eraser" title="Suddgummi (E)" onclick="setTool('eraser')">
         <svg viewBox="0 0 24 24"><path d="M15.14 3c-.51 0-1.02.2-1.41.59L2.59 14.73c-.78.77-.78 2.04 0 2.83L5.67 20.6c.39.39.9.59 1.42.59H19a1 1 0 000-2h-3.54l5.95-5.95a2 2 0 000-2.83L16.55 3.59A2 2 0 0015.14 3z"/></svg>
       </button>
       <div class="separator"></div>
-      <button class="tool-btn" id="btn-undo" title="Ångra (Ctrl+Z)" onclick="undo()">
+      <button class="tool-btn" title="Ångra (Ctrl+Z)" onclick="undo()">
         <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
       </button>
-      <button class="tool-btn" id="btn-clear" title="Rensa allt" onclick="clearCanvas()">
+      <button class="tool-btn" title="Rensa allt" onclick="clearCanvas()">
         <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
-      <button class="tool-btn" id="btn-save" title="Spara bild" onclick="saveImage()">
+      <button class="tool-btn" title="Spara bild (Ctrl+S)" onclick="saveImage()">
         <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
       </button>
     </div>
 
     <div id="toolbar-right">
-      <!-- Color display -->
-      <div id="color-section">
-        <div id="current-color-wrap">
-          <div id="current-color" onclick="toggleColorPicker()"></div>
-          <input type="color" id="color-picker-input" value="#000000" oninput="setColorFromPicker(this.value)">
-        </div>
-        <div id="color-palette">
-          <div class="palette-color" style="background:#000000" onclick="setColor('#000000')"></div>
-          <div class="palette-color" style="background:#ffffff; border:1px solid #ccc" onclick="setColor('#ffffff')"></div>
-          <div class="palette-color" style="background:#ff0000" onclick="setColor('#ff0000')"></div>
-          <div class="palette-color" style="background:#ff6600" onclick="setColor('#ff6600')"></div>
-          <div class="palette-color" style="background:#ffff00" onclick="setColor('#ffff00')"></div>
-          <div class="palette-color" style="background:#00cc00" onclick="setColor('#00cc00')"></div>
-          <div class="palette-color" style="background:#0066ff" onclick="setColor('#0066ff')"></div>
-          <div class="palette-color" style="background:#9900cc" onclick="setColor('#9900cc')"></div>
-          <div class="palette-color" style="background:#ff69b4" onclick="setColor('#ff69b4')"></div>
-          <div class="palette-color" style="background:#8B4513" onclick="setColor('#8B4513')"></div>
-          <div class="palette-color" style="background:#808080" onclick="setColor('#808080')"></div>
-          <div class="palette-color" style="background:#00ffff" onclick="setColor('#00ffff')"></div>
-        </div>
+      <!-- Color swatch opens wheel -->
+      <div id="current-color" onclick="openColorPopup()" title="Välj färg"></div>
+
+      <!-- Quick palette -->
+      <div id="color-palette">
+        <div class="palette-color" style="background:#000000" onclick="setColor('#000000')"></div>
+        <div class="palette-color" style="background:#ffffff;border:1px solid #ccc" onclick="setColor('#ffffff')"></div>
+        <div class="palette-color" style="background:#e74c3c" onclick="setColor('#e74c3c')"></div>
+        <div class="palette-color" style="background:#e67e22" onclick="setColor('#e67e22')"></div>
+        <div class="palette-color" style="background:#f1c40f" onclick="setColor('#f1c40f')"></div>
+        <div class="palette-color" style="background:#2ecc71" onclick="setColor('#2ecc71')"></div>
+        <div class="palette-color" style="background:#3498db" onclick="setColor('#3498db')"></div>
+        <div class="palette-color" style="background:#9b59b6" onclick="setColor('#9b59b6')"></div>
+        <div class="palette-color" style="background:#ff69b4" onclick="setColor('#ff69b4')"></div>
+        <div class="palette-color" style="background:#8B4513" onclick="setColor('#8B4513')"></div>
       </div>
 
       <!-- Size slider -->
       <div id="size-section">
-        <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="4"/></svg>
+        <svg viewBox="0 0 24 24" width="16" height="16" style="fill:#666"><circle cx="12" cy="12" r="4"/></svg>
         <input type="range" id="size-slider" min="1" max="60" value="5" oninput="setBrushSize(this.value)">
-        <svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="10"/></svg>
+        <svg viewBox="0 0 24 24" width="22" height="22" style="fill:#666"><circle cx="12" cy="12" r="10"/></svg>
         <span id="size-label">5</span>
       </div>
     </div>
   </div>
 
-  <!-- Canvas area -->
+  <!-- ── Canvas ─────────────────────────────────────────────── -->
   <div id="canvas-container">
     <canvas id="drawing-canvas"></canvas>
   </div>
 
-  <!-- Mobile bottom bar (brushes + color) -->
+  <!-- ── Mobile bottom bar ─────────────────────────────────── -->
   <div id="mobile-bar">
-    <button class="mob-btn active" id="mob-pencil" onclick="setTool('pencil')" title="Penna">
+    <button class="mob-btn active" id="mob-pencil" onclick="setTool('pencil')">
       <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
     </button>
-    <button class="mob-btn" id="mob-brush" onclick="setTool('brush')" title="Pensel">
+    <button class="mob-btn" id="mob-brush" onclick="setTool('brush')">
       <svg viewBox="0 0 24 24"><path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a1 1 0 00-1.41 0L9 12.25 11.75 15l8.96-8.96a1 1 0 000-1.41z"/></svg>
     </button>
-    <button class="mob-btn" id="mob-marker" onclick="setTool('marker')" title="Markör">
+    <button class="mob-btn" id="mob-marker" onclick="setTool('marker')">
       <svg viewBox="0 0 24 24"><path d="M18.5 1.15c-.53 0-1.04.19-1.43.58L5.35 13.46 9.54 17.65 21.27 5.92c.79-.79.79-2.07 0-2.86l-.35-.35c-.38-.38-.89-.56-1.42-.56zM5.35 14.89L3 21l6.11-2.35L5.35 14.89z"/></svg>
     </button>
-    <button class="mob-btn" id="mob-spray" onclick="setTool('spray')" title="Spray">
+    <button class="mob-btn" id="mob-spray" onclick="setTool('spray')">
       <svg viewBox="0 0 24 24"><path d="M11 5h2v2h-2zm-2 2h2v2H9zm4 0h2v2h-2zm-6 2h2v2H7zm8 0h2v2h-2zm-4 0h2v2h-2zm-2 2h2v2H9zm4 0h2v2h-2zM7 2h10v2H7z"/><path d="M3 22l4-4v-5l-4 9zm14-9v5l4 4-4-9z"/></svg>
     </button>
-    <button class="mob-btn" id="mob-fill" onclick="setTool('fill')" title="Fyll">
+    <button class="mob-btn" id="mob-fill" onclick="setTool('fill')">
       <svg viewBox="0 0 24 24"><path d="M16.56 8.94L7.62 0 6.21 1.41l2.38 2.38-5.15 5.15a1.49 1.49 0 000 2.12l5.5 5.5c.29.29.68.44 1.06.44s.77-.15 1.06-.44l5.5-5.5c.59-.58.59-1.53 0-2.12zM5.21 10L10 5.21 14.79 10H5.21zM19 11.5s-2 2.17-2 3.5c0 1.1.9 2 2 2s2-.9 2-2c0-1.33-2-3.5-2-3.5z"/><path d="M0 20h24v4H0z" opacity=".36"/></svg>
     </button>
-    <button class="mob-btn" id="mob-eraser" onclick="setTool('eraser')" title="Suddgummi">
+    <button class="mob-btn" id="mob-eraser" onclick="setTool('eraser')">
       <svg viewBox="0 0 24 24"><path d="M15.14 3c-.51 0-1.02.2-1.41.59L2.59 14.73c-.78.77-.78 2.04 0 2.83L5.67 20.6c.39.39.9.59 1.42.59H19a1 1 0 000-2h-3.54l5.95-5.95a2 2 0 000-2.83L16.55 3.59A2 2 0 0015.14 3z"/></svg>
     </button>
     <div class="mob-separator"></div>
-    <button class="mob-btn" onclick="undo()" title="Ångra">
+    <button class="mob-btn" onclick="undo()">
       <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
     </button>
-    <button class="mob-btn" onclick="clearCanvas()" title="Rensa">
+    <button class="mob-btn" onclick="clearCanvas()">
       <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
     </button>
-    <button class="mob-btn" onclick="saveImage()" title="Spara">
+    <button class="mob-btn" onclick="saveImage()">
       <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
     </button>
     <div class="mob-separator"></div>
-    <div id="mob-color" onclick="toggleColorPicker()"></div>
+    <div id="mob-color" onclick="openColorPopup()"></div>
   </div>
 
-  <!-- Color picker popup (mobile) -->
-  <div id="color-popup" class="hidden">
+  <!-- ── Color + Size popup (shared desktop/mobile) ─────────── -->
+  <div id="color-popup" class="hidden" onclick="handlePopupBackdropClick(event)">
     <div id="color-popup-inner">
+
+      <div id="wheel-header">
+        <span id="color-preview-swatch"></span>
+        <span id="color-hex-label">#000000</span>
+      </div>
+
+      <!-- Color wheel canvas -->
+      <div id="wheel-wrap">
+        <canvas id="color-wheel"></canvas>
+      </div>
+
+      <!-- Lightness slider -->
+      <div id="lightness-row">
+        <span class="slider-label dark-label">Mörk</span>
+        <input type="range" id="lightness-slider" min="5" max="95" value="50"
+               oninput="onLightnessChange(this.value)">
+        <span class="slider-label light-label">Ljus</span>
+      </div>
+
+      <!-- Quick color palette -->
       <div id="popup-palette">
-        <div class="pp-color" style="background:#000000" onclick="setColor('#000000');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#ffffff;border:1px solid #ccc" onclick="setColor('#ffffff');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#ff0000" onclick="setColor('#ff0000');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#ff6600" onclick="setColor('#ff6600');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#ffcc00" onclick="setColor('#ffcc00');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#00cc00" onclick="setColor('#00cc00');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#0066ff" onclick="setColor('#0066ff');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#9900cc" onclick="setColor('#9900cc');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#ff69b4" onclick="setColor('#ff69b4');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#8B4513" onclick="setColor('#8B4513');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#808080" onclick="setColor('#808080');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#00ffff" onclick="setColor('#00ffff');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#ff9999" onclick="setColor('#ff9999');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#99ff99" onclick="setColor('#99ff99');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#9999ff" onclick="setColor('#9999ff');closeColorPicker()"></div>
-        <div class="pp-color" style="background:#ffff99" onclick="setColor('#ffff99');closeColorPicker()"></div>
+        <div class="pp-color" style="background:#000000" onclick="setColorAndClose('#000000')"></div>
+        <div class="pp-color" style="background:#ffffff;border:1px solid #ddd" onclick="setColorAndClose('#ffffff')"></div>
+        <div class="pp-color" style="background:#e74c3c" onclick="setColorAndClose('#e74c3c')"></div>
+        <div class="pp-color" style="background:#e67e22" onclick="setColorAndClose('#e67e22')"></div>
+        <div class="pp-color" style="background:#f1c40f" onclick="setColorAndClose('#f1c40f')"></div>
+        <div class="pp-color" style="background:#2ecc71" onclick="setColorAndClose('#2ecc71')"></div>
+        <div class="pp-color" style="background:#3498db" onclick="setColorAndClose('#3498db')"></div>
+        <div class="pp-color" style="background:#9b59b6" onclick="setColorAndClose('#9b59b6')"></div>
+        <div class="pp-color" style="background:#ff69b4" onclick="setColorAndClose('#ff69b4')"></div>
+        <div class="pp-color" style="background:#8B4513" onclick="setColorAndClose('#8B4513')"></div>
+        <div class="pp-color" style="background:#95a5a6" onclick="setColorAndClose('#95a5a6')"></div>
+        <div class="pp-color" style="background:#00bcd4" onclick="setColorAndClose('#00bcd4')"></div>
       </div>
-      <div id="popup-custom">
-        <label>Välj färg:</label>
-        <input type="color" id="popup-color-input" value="#000000" oninput="setColorFromPicker(this.value)">
-      </div>
+
+      <!-- Brush size -->
       <div id="popup-size">
         <label>Penselstorlek: <span id="popup-size-label">5</span></label>
-        <input type="range" id="popup-size-slider" min="1" max="60" value="5" oninput="setBrushSize(this.value)">
+        <input type="range" id="popup-size-slider" min="1" max="60" value="5"
+               oninput="setBrushSize(this.value)">
       </div>
-      <button id="popup-close" onclick="closeColorPicker()">Stäng</button>
+
+      <button id="popup-close" onclick="closeColorPopup()">Stäng</button>
     </div>
   </div>
 
