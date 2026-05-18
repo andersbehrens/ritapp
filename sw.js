@@ -1,4 +1,4 @@
-const CACHE = 'ritapp-v2';
+const CACHE = 'ritapp-v3';
 const ASSETS = [
   './',
   './index.html',

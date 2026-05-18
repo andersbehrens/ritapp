@@ -28,7 +28,7 @@ function resizeCanvas() {
 window.addEventListener('resize', () => {
   resizeCanvas();
   if (!document.getElementById('color-popup').classList.contains('hidden')) {
-    updateIndicator();
+    drawWheel();
   }
 });
 resizeCanvas();
@@ -91,13 +91,13 @@ function saveImage() {
   a.click();
 }
 
-// ── Color wheel (CSS-based) ─────────────────────────────────────────────────
-const wheelRing = document.getElementById('wheel-ring');
-const wheelIndicator = document.getElementById('wheel-indicator');
+// ── Color wheel ─────────────────────────────────────────────────────────────
+const wheelCanvas = document.getElementById('color-wheel');
+const wheelCtx    = wheelCanvas.getContext('2d');
 
-let wheelHue       = 0;    // 0-360
-let wheelSat       = 0;    // 0-1
-let wheelLightness = 0.5;  // 0-1
+let wheelHue       = 0;
+let wheelSat       = 0;
+let wheelLightness = 0.5;
 
 function hslToRgb(h, s, l) {
   let r, g, b;
@@ -106,71 +106,97 @@ function hslToRgb(h, s, l) {
   } else {
     const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
     const p = 2 * l - q;
-    const hue2rgb = (p, q, t) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1/6) return p + (q - p) * 6 * t;
+    const f = (t) => {
+      if (t < 0) t += 1; if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q-p)*6*t;
       if (t < 1/2) return q;
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      if (t < 2/3) return p + (q-p)*(2/3-t)*6;
       return p;
     };
-    r = hue2rgb(p, q, h + 1/3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1/3);
+    r = f(h + 1/3); g = f(h); b = f(h - 1/3);
   }
-  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+  return [Math.round(r*255), Math.round(g*255), Math.round(b*255)];
 }
 
 function rgbToHex(r, g, b) {
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
 }
 
-function updateIndicator() {
-  const size   = wheelRing.offsetWidth;
-  const cx     = size / 2;
-  const radius = cx - 4;
-  const angle  = wheelHue * Math.PI / 180;
-  const r      = wheelSat * radius;
-  const ix     = cx + r * Math.cos(angle);
-  const iy     = cx + r * Math.sin(angle);
-  wheelIndicator.style.left = ix + 'px';
-  wheelIndicator.style.top  = iy + 'px';
-}
+function drawWheel() {
+  // Size the canvas to fit the popup inner width
+  const inner = document.getElementById('color-popup-inner');
+  const size  = Math.min(inner.offsetWidth - 36, 260);
+  if (size < 20) { setTimeout(drawWheel, 50); return; }
 
-function updateWheelOverlay() {
-  // Darken with black overlay when lightness < 0.5, lighten with white when > 0.5
-  if (wheelLightness < 0.5) {
-    const darkness = 1 - wheelLightness * 2;
-    wheelRing.style.setProperty('--overlay', `rgba(0,0,0,${darkness * 0.75})`);
-  } else {
-    const lightness = (wheelLightness - 0.5) * 2;
-    wheelRing.style.setProperty('--overlay', `rgba(255,255,255,${lightness * 0.75})`);
+  wheelCanvas.width  = size;
+  wheelCanvas.height = size;
+  const cx = size / 2;
+  const cy = size / 2;
+  const radius = cx - 1;
+
+  // Draw pixel-by-pixel (most reliable, fast enough at 260px)
+  const imgData = wheelCtx.createImageData(size, size);
+  const data    = imgData.data;
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const dx = x - cx, dy = y - cy;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const i = (y * size + x) * 4;
+      if (dist <= radius) {
+        const hue = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
+        const sat = dist / radius;
+        const [r, g, b] = hslToRgb(hue/360, sat, wheelLightness);
+        data[i]=r; data[i+1]=g; data[i+2]=b; data[i+3]=255;
+      }
+      // outside circle stays transparent (alpha 0)
+    }
   }
+  wheelCtx.putImageData(imgData, 0, 0);
+
+  // Draw selector indicator ring
+  const angle = wheelHue * Math.PI / 180;
+  const r     = wheelSat * radius;
+  const ix    = cx + r * Math.cos(angle);
+  const iy    = cy + r * Math.sin(angle);
+
+  wheelCtx.beginPath();
+  wheelCtx.arc(ix, iy, 9, 0, Math.PI * 2);
+  wheelCtx.strokeStyle = '#fff';
+  wheelCtx.lineWidth   = 3.5;
+  wheelCtx.stroke();
+  wheelCtx.beginPath();
+  wheelCtx.arc(ix, iy, 9, 0, Math.PI * 2);
+  wheelCtx.strokeStyle = '#000';
+  wheelCtx.lineWidth   = 1.5;
+  wheelCtx.stroke();
 }
 
 function pickWheelColor(clientX, clientY) {
-  const rect   = wheelRing.getBoundingClientRect();
-  const cx     = rect.width  / 2;
-  const cy     = rect.height / 2;
-  const radius = cx - 4;
-  const dx     = clientX - rect.left - cx;
-  const dy     = clientY - rect.top  - cy;
-  const dist   = Math.sqrt(dx * dx + dy * dy);
+  const rect   = wheelCanvas.getBoundingClientRect();
+  // Scale CSS px → canvas px
+  const scaleX = wheelCanvas.width  / rect.width;
+  const scaleY = wheelCanvas.height / rect.height;
+  const cx     = wheelCanvas.width  / 2;
+  const radius = cx - 1;
+  const dx     = (clientX - rect.left) * scaleX - cx;
+  const dy     = (clientY - rect.top)  * scaleY - cx;
+  const dist   = Math.sqrt(dx*dx + dy*dy);
   if (dist > cx) return;
 
   wheelHue = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
   wheelSat = Math.min(dist / radius, 1);
 
-  const [r, g, b] = hslToRgb(wheelHue / 360, wheelSat, wheelLightness);
+  const [r, g, b] = hslToRgb(wheelHue/360, wheelSat, wheelLightness);
   setColor(rgbToHex(r, g, b));
-  updateIndicator();
+  drawWheel();
 }
 
 function onLightnessChange(val) {
   wheelLightness = parseInt(val) / 100;
-  updateWheelOverlay();
-  const [r, g, b] = hslToRgb(wheelHue / 360, wheelSat, wheelLightness);
+  const [r, g, b] = hslToRgb(wheelHue/360, wheelSat, wheelLightness);
   setColor(rgbToHex(r, g, b));
+  drawWheel();
 }
 
 function syncWheelToColor(hex) {
@@ -184,29 +210,28 @@ function syncWheelToColor(hex) {
     const d = max-min;
     s = l>0.5 ? d/(2-max-min) : d/(max+min);
     switch(max) {
-      case r: h = ((g-b)/d + (g<b?6:0))/6; break;
-      case g: h = ((b-r)/d + 2)/6; break;
-      case b: h = ((r-g)/d + 4)/6; break;
+      case r: h=((g-b)/d+(g<b?6:0))/6; break;
+      case g: h=((b-r)/d+2)/6; break;
+      case b: h=((r-g)/d+4)/6; break;
     }
   }
-  wheelHue = h*360; wheelSat = s; wheelLightness = l;
+  wheelHue=h*360; wheelSat=s; wheelLightness=l;
   document.getElementById('lightness-slider').value = Math.round(l*100);
-  updateWheelOverlay();
-  updateIndicator();
 }
 
 // Wheel mouse
-wheelRing.addEventListener('mousedown', e => { e.preventDefault(); pickWheelColor(e.clientX, e.clientY); });
-wheelRing.addEventListener('mousemove', e => { if (e.buttons===1) pickWheelColor(e.clientX, e.clientY); });
+wheelCanvas.addEventListener('mousedown', e => { e.preventDefault(); pickWheelColor(e.clientX, e.clientY); });
+wheelCanvas.addEventListener('mousemove', e => { if (e.buttons===1) pickWheelColor(e.clientX, e.clientY); });
 
 // Wheel touch
-wheelRing.addEventListener('touchstart', e => { e.preventDefault(); pickWheelColor(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
-wheelRing.addEventListener('touchmove',  e => { e.preventDefault(); pickWheelColor(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+wheelCanvas.addEventListener('touchstart', e => { e.preventDefault(); pickWheelColor(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+wheelCanvas.addEventListener('touchmove',  e => { e.preventDefault(); pickWheelColor(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
 
 // ── Color popup open / close ────────────────────────────────────────────────
 function openColorPopup() {
   document.getElementById('color-popup').classList.remove('hidden');
-  requestAnimationFrame(() => { updateIndicator(); updateWheelOverlay(); });
+  // Double rAF ensures popup is painted and has layout before we measure
+  requestAnimationFrame(() => requestAnimationFrame(drawWheel));
 }
 
 function closeColorPopup() {
