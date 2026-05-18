@@ -76,6 +76,7 @@ function addNewLayer(name, fillWhite) {
   activeLayerIdx = layers.length - 1;
   undoStack.length = 0;
   renderLayersPanel();
+  scheduleSave();
 }
 
 function deleteLayer(idx) {
@@ -86,6 +87,7 @@ function deleteLayer(idx) {
   if (activeLayerIdx >= layers.length) activeLayerIdx = layers.length - 1;
   undoStack.length = 0;
   renderLayersPanel();
+  scheduleSave();
 }
 
 function setActiveLayer(idx) {
@@ -135,6 +137,7 @@ function restorePage(idx) {
   undoStack.length = 0;
   renderLayersPanel();
   renderPagesPanel();
+  scheduleSave();
 }
 
 function switchPage(idx) {
@@ -291,6 +294,7 @@ function undo() {
   if (lassoState !== 'idle') lassoStamp();
   getCtx().putImageData(undoStack.pop(), 0, 0);
   renderLayersPanel();
+  scheduleSave();
 }
 
 // ─── Tool / color / size ──────────────────────────────────────────────────────
@@ -338,6 +342,7 @@ function clearCanvas() {
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
   renderLayersPanel();
+  scheduleSave();
 }
 
 function saveImage() {
@@ -734,7 +739,7 @@ function lassoRedraw() {
   if (lassoCut) ctx.drawImage(lassoCut, lassoBBox.x + lassoOffset.x, lassoBBox.y + lassoOffset.y);
 }
 
-function lassoStamp() { lassoRedraw(); stopLassoAnim(); lassoReset(); renderLayersPanel(); }
+function lassoStamp() { lassoRedraw(); stopLassoAnim(); lassoReset(); renderLayersPanel(); scheduleSave(); }
 
 function lassoCommitOffset() {
   lassoPoints = lassoPoints.map(p => ({x: p.x+lassoOffset.x, y: p.y+lassoOffset.y}));
@@ -830,6 +835,7 @@ function endDraw() {
   ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
   if (sprayTimer) { clearInterval(sprayTimer); sprayTimer = null; }
   renderLayersPanel();
+  scheduleSave();
 }
 
 // ─── Events on canvas-container ──────────────────────────────────────────────
@@ -978,8 +984,115 @@ window.addEventListener('resize', () => {
   if (!document.getElementById('color-popup').classList.contains('hidden')) drawWheel();
 });
 
+// ─── Persistence (localStorage) ──────────────────────────────────────────────
+const STORAGE_KEY = 'ritapp-state-v1';
+let saveTimer = null;
+
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveToStorage, 1500);
+}
+
+function saveToStorage() {
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+  try {
+    saveCurrentPageData();
+    const data = {
+      v: 1,
+      currentPage,
+      zoom, panX, panY,
+      pages: pages.map(pg => ({
+        layerData: pg.layerData.map(ld => {
+          const tmp = document.createElement('canvas');
+          tmp.width = CANVAS_W; tmp.height = CANVAS_H;
+          tmp.getContext('2d').putImageData(ld.imageData, 0, 0);
+          return { dataURL: tmp.toDataURL('image/webp', 0.85), visible: ld.visible, name: ld.name };
+        })
+      }))
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    // Storage full — silently ignore
+  }
+}
+
+function dataURLToImageData(dataURL) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const tmp = document.createElement('canvas');
+      tmp.width = CANVAS_W; tmp.height = CANVAS_H;
+      const ctx = tmp.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      ctx.drawImage(img, 0, 0);
+      resolve(ctx.getImageData(0, 0, CANVAS_W, CANVAS_H));
+    };
+    img.onerror = () => {
+      const tmp = document.createElement('canvas');
+      tmp.width = CANVAS_W; tmp.height = CANVAS_H;
+      const ctx = tmp.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      resolve(ctx.getImageData(0, 0, CANVAS_W, CANVAS_H));
+    };
+    img.src = dataURL;
+  });
+}
+
+async function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!data || data.v !== 1 || !data.pages || !data.pages.length) return false;
+
+    const restoredPages = [];
+    for (const pg of data.pages) {
+      const layerData = [];
+      for (const ld of pg.layerData) {
+        const imageData = await dataURLToImageData(ld.dataURL);
+        layerData.push({ imageData, visible: ld.visible, name: ld.name });
+      }
+      restoredPages.push({ layerData });
+    }
+    pages = restoredPages;
+    currentPage = Math.min(data.currentPage || 0, pages.length - 1);
+
+    // Restore current page layers to DOM
+    const vp    = document.getElementById('viewport');
+    const lasso = document.getElementById('lasso-canvas');
+    layers.forEach(l => l.canvas.remove());
+    layers = [];
+    for (const ld of pages[currentPage].layerData) {
+      const c   = createLayerCanvas();
+      const ctx = c.getContext('2d');
+      ctx.putImageData(ld.imageData, 0, 0);
+      c.style.display = ld.visible ? 'block' : 'none';
+      vp.insertBefore(c, lasso);
+      layers.push({ canvas: c, ctx, visible: ld.visible, name: ld.name });
+    }
+    activeLayerIdx = 0;
+
+    zoom = data.zoom || 1;
+    panX = data.panX || 0;
+    panY = data.panY || 0;
+    applyViewport();
+    renderLayersPanel();
+    renderPagesPanel();
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+window.addEventListener('beforeunload', saveToStorage);
+// Also save on visibility change (covers PWA background/kill on mobile)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveToStorage();
+});
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
-function init() {
+async function init() {
   // Size the lasso canvas to match drawing canvases
   const lasso   = document.getElementById('lasso-canvas');
   lasso.width   = CANVAS_W;
@@ -990,23 +1103,26 @@ function init() {
   vp.style.width  = CANVAS_W + 'px';
   vp.style.height = CANVAS_H + 'px';
 
-  // Add initial background layer
-  addNewLayer('Bakgrund', true);
-
   // Center the canvas
   const c = document.getElementById('canvas-container');
   panX = Math.max(0, (c.clientWidth  - CANVAS_W) / 2);
   panY = Math.max(0, (c.clientHeight - CANVAS_H) / 2);
-  applyViewport();
 
-  // Build initial pages array
-  pages = [{
-    layerData: layers.map(l => ({
-      imageData: l.ctx.getImageData(0, 0, CANVAS_W, CANVAS_H),
-      visible: l.visible,
-      name: l.name
-    }))
-  }];
+  // Try to restore saved state, otherwise create a blank page
+  const restored = await loadFromStorage();
+  if (!restored) {
+    addNewLayer('Bakgrund', true);
+    applyViewport();
+    pages = [{
+      layerData: layers.map(l => ({
+        imageData: l.ctx.getImageData(0, 0, CANVAS_W, CANVAS_H),
+        visible: l.visible,
+        name: l.name
+      }))
+    }];
+  } else {
+    applyViewport();
+  }
 
   // Kick off panel (hidden)
   document.getElementById('side-panel').classList.add('hidden');
